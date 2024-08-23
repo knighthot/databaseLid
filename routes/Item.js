@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const Produk = require('../models/produk');
+const Item = require('../models/Item');
 
 // Set up multer for file upload
 const storage = multer.diskStorage({
@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 1024 * 1024 * 10 }, // Limit file size to 5MB
+    limits: { fileSize: 1024 * 1024 * 10 }, // Limit file size to 10MB
     fileFilter: (req, file, cb) => {
         const filetypes = /jpeg|jpg|png/;
         const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
@@ -31,81 +31,86 @@ const upload = multer({
     }
 });
 
-// Create a new produk with image upload
+// Create a new item with image upload
 router.post('/', upload.single('gambar'), async (req, res) => {
     try {
-        const { nama, deskripsi, harga, fitur } = req.body;
+        const { nama, deskripsi, harga, fitur, kategori } = req.body;
         const gambar = req.file ? req.file.filename : null;
 
-        const produk = await Produk.create({
+        const item = await Item.create({
             nama,
             deskripsi,
             harga,
             fitur,
-            gambar
+            gambar,
+            kategori
         });
 
-        res.status(201).json(produk);
+        res.status(201).json(item);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Get all produk
+// Get all items
 router.get('/', async (req, res) => {
     try {
-        const produk = await Produk.findAll();
-        res.status(200).json(produk);
+        const items = await Item.findAll();
+        res.status(200).json(items);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Get produk by ID
+// Get item by ID
 router.get('/:id', async (req, res) => {
     try {
-        const produk = await Produk.findByPk(req.params.id);
-        if (produk) {
-            res.status(200).json(produk);
+        const item = await Item.findByPk(req.params.id);
+        if (item) {
+            res.status(200).json(item);
         } else {
-            res.status(404).json({ error: 'Produk not found' });
+            res.status(404).json({ error: 'Item not found' });
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Update produk by ID with image upload
+// Update item by ID with image upload
 router.put('/:id', upload.single('gambar'), async (req, res) => {
     try {
-        const { nama, deskripsi, harga, fitur } = req.body;
+        const { nama, deskripsi, harga, fitur, kategori } = req.body;
         const gambar = req.file ? req.file.filename : null;
 
-        const updatedData = { nama, deskripsi, harga, fitur };
+        const updatedData = { nama, deskripsi, harga, fitur, kategori };
         if (gambar) updatedData.gambar = gambar;
 
-        const produk = await Produk.update(updatedData, {
+        const item = await Item.update(updatedData, {
             where: { id: req.params.id }
         });
 
-        res.status(200).json(produk);
+        if (item[0] > 0) {
+            res.status(200).json({ message: 'Item updated successfully' });
+        } else {
+            res.status(404).json({ error: 'Item not found' });
+        }
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Delete produk by ID
+// Delete item by ID
 router.delete('/:id', async (req, res) => {
     try {
-        const produk = await Produk.findByPk(req.params.id);
+        const item = await Item.findByPk(req.params.id);
 
-        if (!produk) {
-            return res.status(404).json({ error: 'Produk not found' });
+        if (!item) {
+            return res.status(404).json({ error: 'Item not found' });
         }
 
         // Delete the image file if it exists
-        if (produk.gambar) {
-            const filePath = path.join(__dirname, '..', 'uploads', produk.gambar);
+        if (item.gambar) {
+            const filePath = path.join(__dirname, '..', 'Produk', item.gambar);
             fs.unlink(filePath, (err) => {
                 if (err) {
                     console.error('Failed to delete image:', err);
@@ -113,12 +118,12 @@ router.delete('/:id', async (req, res) => {
             });
         }
 
-        // Delete the product from the database
-        await Produk.destroy({
+        // Delete the item from the database
+        await Item.destroy({
             where: { id: req.params.id }
         });
 
-        res.status(200).json({ message: 'Produk deleted successfully' });
+        res.status(200).json({ message: 'Item deleted successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

@@ -1,14 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const layananRoutes = require('./routes/layanan');
-const produkRoutes = require('./routes/Produk');
+
+const ItemRoutes = require('./routes/Item');
 
 const app = express();
 
 app.use(bodyParser.json());
 
-app.use('/layanan', layananRoutes);
-app.use('/produk', produkRoutes);
+app.use('/api/item', ItemRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
